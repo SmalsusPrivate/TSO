@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, FileText, MessageSquare, LogOut, Users, MessageCircle, Settings, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, MessageSquare, LogOut, Users, MessageCircle, Settings, CheckSquare, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const menu = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
@@ -15,6 +17,7 @@ export default function Sidebar() {
     { label: 'Courses', icon: BookOpen, href: '/admin/courses' },
     { label: 'Features', icon: CheckSquare, href: '/admin/features' },
     { label: 'Blogs', icon: FileText, href: '/admin/blogs' },
+    { label: 'Blog Topics', icon: FileText, href: '/admin/blog-topics' },
     { label: 'Trainers', icon: Users, href: '/admin/trainers' },
     { label: 'Testimonials', icon: MessageCircle, href: '/admin/testimonials' },
     { label: 'Messages', icon: MessageSquare, href: '/admin/contacts' },
@@ -24,6 +27,22 @@ export default function Sidebar() {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     router.push('/admin/login');
+  };
+
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+      const res = await fetch('/api/admin/sync-vectors', { method: 'POST' });
+      if (res.ok) {
+        alert('AI Database successfully synced!');
+      } else {
+        alert('Failed to sync AI database.');
+      }
+    } catch (e) {
+      alert('An error occurred during sync.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -62,8 +81,12 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="p-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      {/* Bottom Actions */}
+      <div className="p-4 border-t space-y-2" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <button onClick={handleSync} disabled={isSyncing} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-left transition-colors hover:bg-[rgba(0,122,255,0.1)] group disabled:opacity-50" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <RefreshCw className={`w-4 h-4 transition-colors ${isSyncing ? 'animate-spin text-[#007AFF]' : 'group-hover:text-[#007AFF]'}`} />
+          <span className="text-sm font-medium transition-colors group-hover:text-white">{isSyncing ? 'Syncing...' : 'Sync AI Database'}</span>
+        </button>
         <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-left transition-colors hover:bg-white/5 group" style={{ color: 'rgba(255,255,255,0.45)' }}>
           <LogOut className="w-4 h-4 group-hover:text-[#FF2D55] transition-colors" />
           <span className="text-sm font-medium group-hover:text-white transition-colors">Logout</span>

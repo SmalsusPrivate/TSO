@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DataTable from '@/components/admin/DataTable';
 import ActionModal from '@/components/admin/ActionModal';
 import AdminToolbar from '@/components/admin/AdminToolbar';
-import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Sparkles } from 'lucide-react';
 import MediaUpload from '@/components/admin/MediaUpload';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { resolveMediaUrl } from '@/lib/utils';
@@ -24,6 +24,7 @@ export default function BlogsPage() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const table = useDataTable({
     data: blogs,
@@ -55,9 +56,10 @@ export default function BlogsPage() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveAction = async (targetStatus: 'draft' | 'published') => {
     setSubmitting(true);
+    // Temporarily update formData status for the UI loading state if needed
+    setFormData(prev => ({ ...prev, status: targetStatus }));
 
     const isEditing = !!formData.id;
     const url = isEditing
@@ -67,6 +69,7 @@ export default function BlogsPage() {
 
     const payload = {
       ...formData,
+      status: targetStatus,
       tags: formData.tags ? (typeof formData.tags === 'string' ? formData.tags.split(',').map(s => s.trim()) : formData.tags) : []
     };
 
@@ -82,7 +85,7 @@ export default function BlogsPage() {
       });
 
       if (res.ok) {
-        toast.success(isEditing ? 'Blog updated' : 'Blog created');
+        toast.success(targetStatus === 'published' ? 'Blog Published live!' : 'Blog saved as Draft');
         setIsFormOpen(false);
         fetchBlogs();
       } else {
@@ -162,6 +165,29 @@ export default function BlogsPage() {
     setIsDeleteOpen(true);
   };
 
+  const handleGenerateAIBlog = async () => {
+    setIsGenerating(true);
+    toast.info('AI is researching and writing... this may take ~30 seconds');
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/generate-blog`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Successfully generated blog: "${data.topic}"`);
+        fetchBlogs();
+      } else {
+        toast.error(`Failed to generate: ${data.error}`);
+      }
+    } catch (error) {
+      toast.error('Error generating AI blog');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const categories = Array.from(new Set(blogs.map(b => b.category))).filter(Boolean).map(c => ({ label: c, value: c }));
 
   return (
@@ -171,13 +197,24 @@ export default function BlogsPage() {
           <h1 className="text-2xl font-bold text-white mb-2">Blogs & Articles</h1>
           <p className="text-sm font-light text-white/50">Publish and manage blog posts.</p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
-          style={{ background: '#007AFF', boxShadow: '0 6px 20px rgba(0,122,255,0.3)' }}
-        >
-          <Plus className="w-4 h-4" /> Write Post
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleGenerateAIBlog}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #FF9F0A 0%, #FF375F 100%)', boxShadow: '0 6px 20px rgba(255,159,10,0.3)' }}
+          >
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {isGenerating ? 'Writing...' : 'Generate AI Blog'}
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
+            style={{ background: '#007AFF', boxShadow: '0 6px 20px rgba(0,122,255,0.3)' }}
+          >
+            <Plus className="w-4 h-4" /> Write Post
+          </button>
+        </div>
       </div>
 
       <AdminToolbar 
@@ -266,7 +303,7 @@ export default function BlogsPage() {
         onClose={() => setIsFormOpen(false)}
         title={formData.id ? 'Edit Blog Post' : 'New Blog Post'}
       >
-        <form id="blog-form" onSubmit={handleSave} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
 
           <div>
             <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1 block">Post Title</label>
@@ -297,17 +334,10 @@ export default function BlogsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1 block">Read Time</label>
               <input type="text" value={formData.readTime} onChange={(e) => setFormData({ ...formData, readTime: e.target.value })} className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none" placeholder="e.g. 5 min" />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1 block">Status</label>
-              <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none appearance-none">
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
             </div>
           </div>
 
@@ -338,14 +368,17 @@ export default function BlogsPage() {
             <label className="text-[10px] font-medium text-white/40 uppercase tracking-wider mb-1 block">Tags (comma separated)</label>
             <input type="text" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none" placeholder="e.g. AI, Python, Career" />
           </div>
-        </form>
+        </div>
 
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
           <button onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-colors">
             Cancel
           </button>
-          <button type="submit" form="blog-form" disabled={submitting} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50" style={{ background: '#007AFF' }}>
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Blog'}
+          <button type="button" onClick={() => handleSaveAction('draft')} disabled={submitting} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50" style={{ background: 'rgba(255,255,255,0.1)' }}>
+            {submitting && formData.status === 'draft' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Draft'}
+          </button>
+          <button type="button" onClick={() => handleSaveAction('published')} disabled={submitting} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-50" style={{ background: '#007AFF' }}>
+            {submitting && formData.status === 'published' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Publish Post'}
           </button>
         </div>
       </ActionModal>

@@ -35,6 +35,11 @@ const fallbackPosts = [
   { id: 8, title: 'How to Build a Tech Resume That Gets You Interviews',           excerpt: 'Expert tips from our placement team on crafting a resume that passes ATS filters and impresses hiring managers at top IT companies.',                          category: 'Career Tips',    date: 'April 15, 2025', readTime: '8 min',  img: 'https://images.pexels.com/photos/590016/pexels-photo-590016.jpeg?auto=compress&cs=tinysrgb&w=800',    featured: false, color: '#007AFF', tags: ['Resume', 'Career', 'Job Search'] },
 ];
 
+export function generateSlug(id: number | string, title: string) {
+  if (!title) return `/blog/${id}`;
+  const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return `/blog/${id}-${safeTitle}`;
+}
 
 function FeaturedPost({ post, delay }: { post: any; delay: number }) {
   return (
@@ -43,8 +48,8 @@ function FeaturedPost({ post, delay }: { post: any; delay: number }) {
       transition={{ duration: 0.8, delay, ease: EASE_AVP }}
       className="group relative rounded-2xl overflow-hidden" style={{ minHeight: 420 }}
     >
-      <img src={resolveMediaUrl(post.img)} alt={post.title} className="absolute inset-0 w-full h-full object-cover brightness-[0.75] group-hover:scale-[1.04] transition-transform duration-700" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+      <img src={resolveMediaUrl(post.img)} alt={post.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
       <div className="relative z-10 h-full flex flex-col justify-end p-8">
         <div className="mb-auto flex items-center gap-3 pt-5">
           <span className="label-text text-[10px] px-3 py-1.5 rounded-full glass" style={{ color: post.color, background: `${post.color}15` }}>{post.category}</span>
@@ -56,7 +61,7 @@ function FeaturedPost({ post, delay }: { post: any; delay: number }) {
             <div className="flex items-center gap-3 text-white/30 text-xs">
               <span>{post.date}</span><span>·</span><span className="flex items-center gap-1"><Clock className="w-3 h-3" />{post.readTime}</span>
             </div>
-            <Link href={`/blog/${post.id}`} className="flex items-center gap-1.5 text-sm font-semibold group-hover:gap-2.5 transition-all duration-300" style={{ color: post.color }}>
+            <Link href={generateSlug(post.id, post.title)} className="flex items-center gap-1.5 text-sm font-semibold group-hover:gap-2.5 transition-all duration-300" style={{ color: post.color }}>
               {post.content?.blog_read_btn || 'Read'} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -75,8 +80,8 @@ function PostCard({ post, delay }: { post: any; delay: number }) {
       className="group glass rounded-2xl overflow-hidden transition-all duration-500"
     >
       <div className="relative overflow-hidden h-44">
-        <img src={resolveMediaUrl(post.img)} alt={post.title} className="w-full h-full object-cover brightness-[0.82] group-hover:scale-[1.05] transition-transform duration-700" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+        <img src={resolveMediaUrl(post.img)} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="absolute bottom-3 left-3">
           <span className="label-text text-[9px] px-2.5 py-1 rounded-full" style={{ color: post.color, background: `${post.color}18`, border: `1px solid ${post.color}28` }}>{post.category}</span>
         </div>
@@ -89,7 +94,7 @@ function PostCard({ post, delay }: { post: any; delay: number }) {
         </div>
         <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{post.date} · {post.readTime}</span>
-          <Link href={`/blog/${post.id}`} className="flex items-center gap-1 text-xs font-semibold group-hover:gap-1.5 transition-all duration-300" style={{ color: post.color }}>
+          <Link href={generateSlug(post.id, post.title)} className="flex items-center gap-1 text-xs font-semibold group-hover:gap-1.5 transition-all duration-300" style={{ color: post.color }}>
             {post.content?.blog_read_btn || 'Read'} <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
@@ -149,7 +154,9 @@ function BlogContent() {
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success') {
-          const parsed = data.data.map((p: any) => ({
+          const parsed = data.data
+            .filter((p: any) => p.status === 'published')
+            .map((p: any) => ({
             ...p,
             tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
             img: p.coverImage,
@@ -228,7 +235,7 @@ function BlogContent() {
                     style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-subtle)' }}>
                     <p className="text-[10px] uppercase font-bold text-white/30 px-3 py-1 mb-1">Recommended</p>
                     {searchRecommendations.map((rec) => (
-                      <Link key={rec.id} href={`/blog/${rec.id}`} className="block px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <Link key={rec.id} href={generateSlug(rec.id, rec.title)} className="block px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
                         <div className="text-sm font-medium text-white truncate">{rec.title}</div>
                         <div className="text-xs text-white/40">{rec.category}</div>
                       </Link>

@@ -348,7 +348,7 @@ function CourseCard({
 
   // Video parallax — zooms from 1.2 → 1 as card scrolls into view
   const vidScale = useTransform(scrollYProgress, [0, 0.4, 1], [1.22, 1, 0.95]);
-  const vidOpacity = useTransform(scrollYProgress, [0, 0.15, 0.7, 1], [0, 0.32, 0.32, 0.08]);
+  const vidOpacity = useTransform(scrollYProgress, [0, 0.15, 0.7, 1], [0.4, 1, 1, 0.4]);
   const textY = useTransform(scrollYProgress, [0, 1], [40, -40]);
   const [open, setOpen] = useState(false);
 
@@ -393,7 +393,7 @@ function CourseCard({
         {/* Bottom scrim — text readability */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to top, rgba(3,3,8,0.97) 0%, rgba(3,3,8,0.7) 30%, rgba(3,3,8,0.15) 60%, transparent 100%)' }}
+          style={{ background: 'linear-gradient(to top, rgba(3,3,8,0.95) 0%, rgba(3,3,8,0.5) 25%, transparent 50%)' }}
         />
 
         {/* Noise grain overlay */}
@@ -540,10 +540,10 @@ function CourseDetailPanel({ course }: { course: typeof fallbackCourses[0] }) {
               loop
               playsInline
               className="absolute inset-0 w-full h-full object-cover"
-              style={{ opacity: 0.75 }}
+              style={{ opacity: 0.9 }}
             />
             {/* Video overlay gradient */}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${course.color}22, rgba(3,3,8,0.6))` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${course.color}22, rgba(3,3,8,0.4))` }} />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, transparent 60%, #08080f)' }} />
 
             {/* Sound toggle */}

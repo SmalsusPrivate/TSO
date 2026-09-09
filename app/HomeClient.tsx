@@ -581,7 +581,7 @@ function Courses() {
                   src={resolveMediaUrl(c.img)}
                   alt={c.name}
                   className="w-full h-full object-cover"
-                  style={{ opacity: 0.28 }}
+                  style={{ opacity: 0.8 }}
                   whileHover={{ scale: 1.1 }}
                   transition={{ duration: 0.8 }}
                 />
@@ -590,10 +590,10 @@ function Courses() {
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `linear-gradient(to bottom right, ${c.color}18, transparent 50%, black/70)`,
+                  background: `linear-gradient(to bottom right, ${c.color}18, transparent 50%, black/40)`,
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
               <div
                 className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"

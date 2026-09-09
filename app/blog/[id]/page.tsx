@@ -10,10 +10,17 @@ import { useContent } from '@/components/ContentContext';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+export function generateSlug(id: number | string, title: string) {
+  if (!title) return `/blog/${id}`;
+  const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return `/blog/${id}-${safeTitle}`;
+}
+
 export default function BlogPostPage() {
   const content = useContent();
   const params = useParams();
-  const id = Number(params.id);
+  const rawId = params.id as string;
+  const id = rawId ? Number(rawId.split('-')[0]) : null;
   const [post, setPost] = useState<any>(null);
   const [related, setRelated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,13 +112,17 @@ export default function BlogPostPage() {
       {/* Hero */}
       <section className="relative min-h-[55vh] flex items-end overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
         <div className="absolute inset-0">
-          <img
-            src={resolveMediaUrl(post.coverImage || post.thumbnail)}
-            alt={post.title}
-            className="w-full h-full object-cover"
-            style={{ opacity: 0.25 }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-[var(--bg-primary)]/60 to-transparent" style={{ background: `linear-gradient(to top, var(--bg-primary) 30%, transparent 100%)` }} />
+          {post.coverImage || post.thumbnail ? (
+            <img
+              src={resolveMediaUrl(post.coverImage || post.thumbnail)}
+              alt={post.title}
+              className="absolute inset-0 w-full h-full object-cover opacity-80"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF]/20 to-transparent" />
+          )}
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-[var(--bg-primary)]/40 to-transparent" />
         </div>
 
         <motion.div
@@ -161,36 +172,67 @@ export default function BlogPostPage() {
       </section>
 
       {/* Article content */}
-      <article className="max-w-3xl mx-auto px-6 pb-24">
+      <article className="max-w-4xl mx-auto px-6 pb-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
-          className="space-y-6"
+          className="space-y-6 rich-text-content"
         >
-          {paragraphs.map((p: string, i: number) => {
-            // Very basic parsing for demo: if it looks like a heading, style it
-            if (p.length < 100 && !p.includes('.') && (p.startsWith('Step') || p.match(/^[A-Z][a-z]+:/) || i === 0 && p.length < 50)) {
-               return (
-                <h2
-                  key={i}
-                  className="text-2xl font-bold tracking-tight pt-4"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {p}
-                </h2>
-               )
+          <style dangerouslySetInnerHTML={{__html: `
+            .rich-text-content {
+              color: var(--text-secondary);
+              font-weight: 300;
+              line-height: 2;
+              font-size: 1.125rem;
             }
-            return (
-              <p
-                key={i}
-                className="text-base leading-[1.85] font-light"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {p}
-              </p>
-            );
-          })}
+            .rich-text-content h1 { 
+              display: none; 
+            }
+            .rich-text-content h2, 
+            .rich-text-content h3 {
+              color: var(--text-primary);
+              font-weight: 700;
+              letter-spacing: -0.025em;
+              margin-top: 2.5rem;
+              margin-bottom: 1.25rem;
+            }
+            .rich-text-content h2 { font-size: 1.75rem; }
+            .rich-text-content h3 { font-size: 1.5rem; }
+            .rich-text-content p {
+              margin-bottom: 1.75rem;
+            }
+            .rich-text-content ul {
+              margin-left: 1.5rem;
+              margin-bottom: 1.75rem;
+              list-style-type: disc;
+              list-style-position: outside;
+            }
+            .rich-text-content ol {
+              margin-left: 1.5rem;
+              margin-bottom: 1.75rem;
+              list-style-type: decimal;
+              list-style-position: outside;
+            }
+            .rich-text-content li {
+              margin-bottom: 0.75rem;
+              padding-left: 0.5rem;
+            }
+            .rich-text-content strong {
+              color: var(--text-primary);
+              font-weight: 600;
+            }
+            .rich-text-content a {
+              color: #007AFF;
+              text-decoration: underline;
+              text-underline-offset: 4px;
+              transition: opacity 0.2s;
+            }
+            .rich-text-content a:hover {
+              opacity: 0.8;
+            }
+          `}} />
+          <div dangerouslySetInnerHTML={{ __html: post.content || '' }} />
         </motion.div>
 
         {/* Tags */}
@@ -275,7 +317,7 @@ export default function BlogPostPage() {
                       {r.title}
                     </h4>
                     <Link
-                      href={`/blog/${r.id}`}
+                      href={generateSlug(r.id, r.title)}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold"
                       style={{ color: r.color || '#007AFF' }}
                     >
